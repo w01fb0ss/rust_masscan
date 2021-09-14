@@ -4,6 +4,8 @@ use serde_json::{Result, Value};
 use std::process::Command;
 use std::str;
 
+type BoxResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
 #[derive(Debug, Default)]
 pub struct Masscan {
     pub system_path: String,
@@ -92,7 +94,7 @@ impl Masscan {
         self
     }
 
-    pub fn run(&self) -> Result<Vec<Info>> {
+    pub fn run(&self) -> BoxResult<Vec<Info>> {
         let mut args: Vec<&str> = vec!["--range", self.ranges.as_str(), "-p", self.ports.as_str()];
         let other_args: Vec<&str> = self.args.iter().map(|x| x.as_str()).collect();
         args.extend(other_args.iter().cloned());
@@ -104,14 +106,24 @@ impl Masscan {
         args.push("-");
         println!("args: {:?}", args);
 
-        let output = Command::new(self.system_path.as_str())
-            .args(args)
-            .output()
-            .expect("exec masscan error");
-        let result = str::from_utf8(&output.stdout).unwrap();
-        let v: Value = serde_json::from_str(result).unwrap();
+        let output = match Command::new(self.system_path.as_str()).args(args).output() {
+            Ok(output) => output,
+            Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error>),
+        };
+        let result = match str::from_utf8(&output.stdout) {
+            Ok(result) => result,
+            Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error>),
+        };
+        let v: Value = match serde_json::from_str(result) {
+            Ok(v) => v,
+            Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error>),
+        };
         let mut ps: Vec<Info> = Vec::new();
-        for item in v.as_array().unwrap().iter() {
+        let item_array = match v.as_array() {
+            Some(v) => v,
+            None => return Ok(ps),
+        };
+        for item in item_array.iter() {
             let p: Info = serde_json::from_value(item.clone()).unwrap();
             ps.push(p);
         }
