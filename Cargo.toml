@@ -5,7 +5,7 @@ edition = "2018"
 authors = ["leen.zhou.cn<leen.zhou.cn@gmail.com>"]
 description = "A module for masscan."
 readme = "README.md"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 homepage = "https://github.com/w01fb0ss/rust_masscan"
 repository = "https://github.com/w01fb0ss/rust_masscan"
 
