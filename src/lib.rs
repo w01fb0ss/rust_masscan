@@ -4,7 +4,7 @@ use serde_json::{Result, Value};
 use std::process::Command;
 use std::str;
 
-type BoxResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+pub type BoxResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[derive(Debug, Default)]
 pub struct Masscan {
