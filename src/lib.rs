@@ -8,6 +8,7 @@ type BoxResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[derive(Debug, Default)]
 pub struct Masscan {
+    pub sudo: bool,
     pub system_path: String,
     pub args: Vec<String>,
     pub ports: String,
@@ -94,6 +95,11 @@ impl Masscan {
         self
     }
 
+    pub fn set_sudo(mut self) -> Masscan {
+        self.sudo = true;
+        self
+    }
+
     pub fn run(&self) -> BoxResult<Vec<Info>> {
         let mut args: Vec<&str> = vec!["--range", self.ranges.as_str(), "-p", self.ports.as_str()];
         let other_args: Vec<&str> = self.args.iter().map(|x| x.as_str()).collect();
@@ -102,14 +108,31 @@ impl Masscan {
         args.push(self.rate.as_str());
         args.push("--exclude");
         args.push(self.exclude.as_str());
+        args.push("--wait");
+        args.push("0");
         args.push("-oJ");
         args.push("-");
         println!("args: {:?}", args);
 
-        let output = match Command::new(self.system_path.as_str()).args(args).output() {
-            Ok(output) => output,
-            Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error>),
+        let output = if self.sudo {
+            match Command::new("sudo")
+                .arg(self.system_path.as_str())
+                .args(args)
+                .output()
+            {
+                Ok(output) => output,
+                Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error>),
+            }
+        } else {
+            match Command::new(self.system_path.as_str()).args(args).output() {
+                Ok(output) => output,
+                Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error>),
+            }
         };
+        // let output = match Command::new(self.system_path.as_str()).args(args).output() {
+        //     Ok(output) => output,
+        //     Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error>),
+        // };
         let result = match str::from_utf8(&output.stdout) {
             Ok(result) => result,
             Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error>),
