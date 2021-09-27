@@ -101,13 +101,15 @@ impl Masscan {
     }
 
     pub fn run(&self) -> BoxResult<Vec<Info>> {
-        let mut args: Vec<&str> = vec!["--range", self.ranges.as_str(), "-p", self.ports.as_str()];
+        let mut args: Vec<&str> = vec!["-p", self.ports.as_str(), "--range", self.ranges.as_str()];
         let other_args: Vec<&str> = self.args.iter().map(|x| x.as_str()).collect();
         args.extend(other_args.iter().cloned());
         args.push("--rate");
         args.push(self.rate.as_str());
-        args.push("--exclude");
-        args.push(self.exclude.as_str());
+        if !self.exclude.is_empty() {
+            args.push("--exclude");
+            args.push(self.exclude.as_str());
+        }
         args.push("--wait");
         args.push("0");
         args.push("-oJ");
