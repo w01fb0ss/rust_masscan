@@ -1,8 +1,11 @@
 //! A module for masscan.
 use serde::{Deserialize, Serialize};
-use serde_json::{Result, Value};
+use serde_json::Value;
 use std::process::Command;
 use std::str;
+
+#[macro_use]
+extern crate log;
 
 pub type BoxResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -17,7 +20,7 @@ pub struct Masscan {
     pub exclude: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Info {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ip: Option<String>,
@@ -27,7 +30,7 @@ pub struct Info {
     pub ports: Option<Vec<Ports>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Ports {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub port: Option<u32>,
@@ -43,7 +46,7 @@ pub struct Ports {
     pub ttl: Option<u32>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -131,17 +134,20 @@ impl Masscan {
                 Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error>),
             }
         };
-        // let output = match Command::new(self.system_path.as_str()).args(args).output() {
-        //     Ok(output) => output,
-        //     Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error>),
-        // };
+
         let result = match str::from_utf8(&output.stdout) {
             Ok(result) => result,
-            Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error>),
+            Err(e) => {
+                error!("e1: {:?}", e);
+                return Err(Box::new(e) as Box<dyn std::error::Error>);
+            }
         };
         let v: Value = match serde_json::from_str(result) {
             Ok(v) => v,
-            Err(e) => return Err(Box::new(e) as Box<dyn std::error::Error>),
+            Err(e) => {
+                error!("e2: {:?}", e);
+                return Err(Box::new(e) as Box<dyn std::error::Error>);
+            }
         };
         let mut ps: Vec<Info> = Vec::new();
         let item_array = match v.as_array() {
