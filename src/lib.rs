@@ -69,7 +69,8 @@ impl Masscan {
     ///         .set_ports("22,8080-8100".to_string())
     ///         .set_ranges("xx.xx.xx.xx,yy.yy.yy.yy".to_string())
     ///         .set_rate("10000".to_string())
-    ///         .set_other_args(other_args);
+    ///         .set_other_args(other_args)
+                .set_sudo();
     /// let result = mas.run();
     //  println!("{:?}", result);
     /// ```
